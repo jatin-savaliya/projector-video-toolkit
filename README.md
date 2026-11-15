@@ -1,62 +1,80 @@
 # Projector Video Toolkit
 
-Windows batch tools for people who play videos from a USB drive on a budget
-projector. They scan a folder, work out which videos the projector can't play,
-transcode only those, and keep a single audio track for projectors that can't
-switch tracks.
+Windows tools for anyone who plays videos from a USB drive on a budget projector.
 
-Everything runs locally on your PC using ffmpeg. No network or install needed.
+Budget projectors usually play only a narrow set of formats (typically **H.264 video + AAC audio**), cannot switch audio tracks, and fail silently or show a black screen when a file doesn't fit. This toolkit does three things:
 
-## What is in this repo
+1. **Scans a whole folder** and tells you which videos the projector can play and which it can't.
+2. **Converts only the videos that need it**, copying whatever is already fine, so nothing is re-encoded unnecessarily.
+3. **Keeps a single audio track** in files that have many languages, because the projector always plays the first track and has no way to change it.
 
-| File | What it does |
-|------|--------------|
-| `scan_folder_compatible.bat` | Scans a folder, renames each video to `_compatible` or `_not_compatible`, then lets you pick which incompatible files to transcode. |
-| `make_compatible.bat` | Checks one file and transcodes it to H.264 + AAC (MP4) only if needed. |
-| `keep_one_audio.bat` | Lists the audio tracks of one file and writes a copy with only the track you choose. |
+Everything runs locally on your PC using [ffmpeg](https://ffmpeg.org). No internet connection, no accounts, no installation.
 
-## Requirements
+> **Platform:** Windows 10 or later only. The scripts have not been tested on macOS or Linux, so nothing here claims to work there.
 
-- Windows 10 or later
-- `ffmpeg.exe` and `ffprobe.exe`, downloaded separately from https://ffmpeg.org/download.html
-  (they are not included in this repo)
+---
 
-Put `ffmpeg.exe` and `ffprobe.exe` in the same folder as the `.bat` files,
-or add their folder to your PATH.
+## The tools
 
-## How to use
+| File | What it does | Use it when |
+|------|--------------|-------------|
+| `scan_folder_compatible.bat` | Scans a folder, renames each video to `_compatible` or `_not_compatible`, then lets you choose which incompatible files to convert. | You have a folder of videos for the projector. **Start here.** |
+| `keep_one_audio.bat` | Lists the audio tracks in one file and writes a copy that contains only the track you choose. | A file has several audio languages and you want just one. |
+| `make_compatible.bat` | The original single-file checker and converter. | You want to check or convert exactly one file. |
 
-### 1. Scan a whole folder
-1. Double-click `scan_folder_compatible.bat`.
-2. Paste the folder path. Only files directly in that folder are read, not subfolders.
-3. Files already ending in `_compatible` or `_not_compatible` are skipped.
-4. Each remaining video is renamed `name_compatible.ext` or `name_not_compatible.ext`.
-5. A numbered list of `_not_compatible` files appears. Type numbers like `1,3,5`,
-   `all`, or press Enter to skip.
-6. Transcoding writes `name_compatible.mp4`. The original stays as `name_not_compatible.ext`.
+---
 
-### 2. Keep only one audio track
-1. Double-click `keep_one_audio.bat`.
-2. Paste the path of the video file.
-3. Pick the audio track to keep. A new file `name_1audio.ext` is written with only
-   that track. The original is not touched.
+## Quick start
 
-## Compatibility rule
+1. **Download this repository:** click the green **Code** button, then **Download ZIP**, and unzip it.
+2. **Get ffmpeg:** download a Windows build from <https://ffmpeg.org/download.html>. From the zip, copy `ffmpeg.exe` and `ffprobe.exe` (they are in the `bin` folder) into the same folder as the `.bat` files. These are not included in this repository.
+3. **Run a tool:** double-click `scan_folder_compatible.bat`.
+4. **Paste the path of your video folder** and press Enter.
+5. When the scan finishes, pick the files you want converted from the numbered list.
 
-A file counts as compatible when the video codec is **H.264** and **every audio
-track is AAC**. The container (for example MKV) is not checked.
-Incompatible files are transcoded per track: streams that are already fine are
-copied, and only the incompatible ones are re-encoded.
+For a step-by-step walkthrough with explanations of every screen, read the [Beginner Guide](docs/BeginnerGuide.md).
 
-## Notes
+---
 
-- Subtitles are always dropped.
-- Video is not re-encoded when it is already H.264, and audio tracks are not
-  re-encoded when they are already AAC.
-- Transcoding writes to a temporary name (`..._underTranscoding_not_compatible.mp4`)
-  and renames it only on success. If a run is interrupted, delete the leftover file.
-- Tested with a PANSEBA budget projector. Other projectors may need different codecs.
+## How a file is judged
+
+A video is **compatible** when:
+
+- the video codec is **H.264**, and
+- **every** audio track is **AAC**.
+
+Anything else is **not compatible**. The container (MP4, MKV, ...) is not checked. If your projector plays MKV files with H.264 and AAC inside, they are treated as compatible.
+
+When a file is converted, only the parts that need it are re-encoded: H.264 video is copied as-is, and each audio track that is already AAC is copied as-is. Subtitles are always dropped.
+
+---
+
+## Safety notes
+
+- **The scanner renames your files.** It adds `_compatible` or `_not_compatible` to the file name. Try it on a folder of copies first.
+- Original files are never deleted by any of these tools.
+- Converted files are written under a temporary name and renamed only when the conversion succeeds.
+
+---
+
+## Documentation
+
+- **[Beginner Guide](docs/BeginnerGuide.md):** setup and use for non-technical users, with troubleshooting.
+- **[Developer Guide](docs/DeveloperGuide.md):** how the scripts work, the exact ffmpeg commands, how to customise and test them.
+
+---
+
+## Known limitations
+
+- Only codecs are checked. A file with H.264 + AAC can still fail on a projector if it is 4K, 10-bit, or uses an unusual profile or frame rate.
+- Only the first video stream is kept. Subtitles are always removed.
+- Only files directly inside the chosen folder are scanned, not subfolders.
+- Tested with a PANSEBA budget projector. Other projectors may support different formats.
+
+---
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).
+
+This repository does not include or redistribute ffmpeg. ffmpeg is a separate project with its own license.
